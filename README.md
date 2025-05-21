@@ -1,21 +1,59 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web.
+# ♟ Kotlin Multiplatform Chess App
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+This is a Kotlin Multiplatform project targeting **Android**, **iOS**, and **Web** using **JetBrains
+Compose Multiplatform**. It aims to be a simple chess app showcasing shared business logic and UI
+across platforms.
 
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+## 🧱 Project Structure
+The project is structured to separate shared code from platform-specific code. The main components 
+are:
+```text
+kmp-chess/
+├── composeApp/          # Shared Kotlin Multiplatform module
+│   ├── commonMain/      # Shared code (UI, logic)
+│   ├── androidMain/     # Android-specific code
+│   ├── iosMain/         # iOS-specific code
+│   └── wasmJsMain/      # Web-specific code (WASM)
+└── iosApp/              # Native iOS app wrapper (Xcode project)
+```
 
+## ▶️ How to Run
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+### ✅ Android
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+1. Open the project in **Android Studio**.
+2. Select an Android device or emulator.
+3. Run the `androidApp` configuration **or** execute:
 
-You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
+```bash
+./gradlew :composeApp:installDebug
+```
+
+### 🍏 iOS
+
+1. Open iosApp/iosApp.xcodeproj in Xcode.
+2. Choose a simulator or a physical device.
+3. Press Cmd + R to build and run.
+
+### 🌐 Web (WASM)
+
+To run the web (Kotlin/Wasm) version locally:
+
+```bash
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+```
+Then open the printed `localhost` URL in your browser.
+
+### Image Attributions
+
+Chess piece and board images are used under
+the [Creative Commons Attribution-ShareAlike License (CC BY-SA)](https://creativecommons.org/licenses/by-sa/3.0/).
+
+- **Standard chess pieces** are derived from images
+  on [Wikipedia: Chess](https://en.wikipedia.org/wiki/Chess), modified and redistributed by **Uray
+  M. János** on the [Green Chess](http://greenchess.sourceforge.net/download.html) project.
+- **Boards** are original works by **Uray M. János**.
+-
+Source: [http://greenchess.sourceforge.net/download.html](http://greenchess.sourceforge.net/download.html)
+
+© Uray M. János 2009–2025
