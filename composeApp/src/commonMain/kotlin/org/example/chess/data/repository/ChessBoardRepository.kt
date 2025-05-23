@@ -26,7 +26,7 @@ class ChessBoardRepository {
     }
 
     private fun initBoard(): Array<Array<Piece?>> {
-        val board = Array(8) { Array<Piece?>(8) { null } }
+        val board = Array(CHESS_BOARD_SIZE) { Array<Piece?>(CHESS_BOARD_SIZE) { null } }
 
         board[0] = arrayOf(
             Piece(PieceType.ROOK, PieceColor.BLACK),

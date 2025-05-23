@@ -20,7 +20,7 @@ import org.example.chess.ui.viewmodel.ChessViewModel
 
 @Composable
 fun App(viewModel: ChessViewModel) {
-    val boardState by viewModel.uiBoard.collectAsState(initial = emptyArray())
+    val boardState by viewModel.uiPieces.collectAsState(initial = emptyList())
 
     MaterialTheme {
         Column(
