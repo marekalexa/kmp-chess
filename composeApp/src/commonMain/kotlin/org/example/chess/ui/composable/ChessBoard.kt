@@ -1,5 +1,6 @@
 package org.example.chess.ui.composable
 
+
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -8,31 +9,93 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.example.chess.ui.model.AnimatedPiece
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+
+private val files = listOf('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
+private val ranks = (8 downTo 1).toList()
+
 private const val SQUARE_SIZE = 48  // size of one square
+private const val PIECE_SIZE = 42  // size of one piece
 private const val BOARD_DIMENSION = 8 // number of squares per row/column
-private const val BOARD_SIZE = BOARD_DIMENSION*SQUARE_SIZE // total board size
+private const val BOARD_SIZE = BOARD_DIMENSION * SQUARE_SIZE // total board size
 private const val ANIMATION_DURATION = 500
+
 @Composable
-fun ChessBoard(pieces: List<AnimatedPiece>) {
-    Box(Modifier.size(BOARD_SIZE.dp)) {
+fun ChessBoardWithLabels(
+    pieces: List<AnimatedPiece>,
+) {
+    Box(Modifier.size((BOARD_SIZE).dp)) {
         BoardGrid()
+        LabelsOverlay()
         AnimatedPiecesLayer(pieces)
     }
 }
 
+@Composable
+private fun LabelsOverlay() {
+    Box(Modifier.size((BOARD_SIZE).dp)) {
+        for (row in 0 until BOARD_DIMENSION) {
+            for (col in 0 until BOARD_DIMENSION) {
+                // compute whether this square is light or dark
+                val isDark = (row + col) % 2 == 0
+                val textColor = if (isDark) {
+                    Color.Gray
+                } else {
+                    Color.White
+                }
+
+                // absolute position of this cell
+                val x = (col * SQUARE_SIZE).dp
+                val y = (row * SQUARE_SIZE).dp
+
+                Box(
+                    modifier = Modifier
+                        .absoluteOffset(x = x, y = y)
+                        .size(SQUARE_SIZE.dp)
+                ) {
+                    // rank label on the leftmost column
+                    if (col == 0) {
+                        Text(
+                            text = ranks[row].toString(),
+                            fontSize = 10.sp,
+                            lineHeight = 10.sp,
+                            color = textColor,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(1.dp, 0.dp),
+                        )
+                    }
+                    // file label on the bottom row
+                    if (row == BOARD_DIMENSION - 1) {
+                        Text(
+                            text = files[col].toString(),
+                            fontSize = 10.sp,
+                            lineHeight = 10.sp,
+                            color = textColor,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(1.dp, 0.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
-@OptIn(ExperimentalResourceApi::class)
 private fun BoardGrid() {
     val lightSq = Color.White
     val darkSq = Color.Gray
@@ -41,10 +104,15 @@ private fun BoardGrid() {
             Row {
                 repeat(BOARD_DIMENSION) { col ->
                     val light = (row + col) % 2 == 0
+                    val background = if (light) {
+                        lightSq
+                    } else {
+                        darkSq
+                    }
                     Box(
                         Modifier
                             .size(SQUARE_SIZE.dp)
-                            .background(if (light) lightSq else darkSq)
+                            .background(background)
                     )
                 }
             }
@@ -52,25 +120,29 @@ private fun BoardGrid() {
     }
 }
 
-
 @Composable
 fun AnimatedPiecesLayer(pieces: List<AnimatedPiece>) {
     Box(Modifier.size((BOARD_SIZE).dp)) {
         pieces.forEach { piece ->
             key(piece.id) {
+                val pieceOffset = (SQUARE_SIZE - PIECE_SIZE) / 2
+                val xTargetValue = ((piece.col * SQUARE_SIZE) + pieceOffset).dp
                 val x by animateDpAsState(
-                    targetValue = (piece.col * SQUARE_SIZE).dp,
+                    targetValue = xTargetValue,
                     animationSpec = TweenSpec(ANIMATION_DURATION)
                 )
+                val yTargetValue = ((piece.row * SQUARE_SIZE) + pieceOffset).dp
                 val y by animateDpAsState(
-                    targetValue = (piece.row * SQUARE_SIZE).dp,
+                    targetValue = yTargetValue,
                     animationSpec = TweenSpec(ANIMATION_DURATION)
                 )
 
                 Image(
                     painter = painterResource(piece.representation.drawable),
                     contentDescription = null,
-                    modifier = Modifier.size(SQUARE_SIZE.dp).absoluteOffset(x, y)
+                    modifier = Modifier
+                        .size(PIECE_SIZE.dp)
+                        .absoluteOffset(x, y)
                 )
             }
         }
