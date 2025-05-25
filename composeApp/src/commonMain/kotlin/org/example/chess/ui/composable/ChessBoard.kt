@@ -5,6 +5,7 @@ import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.chess.domain.model.Square
 import org.example.chess.ui.model.AnimatedPiece
 import org.jetbrains.compose.resources.painterResource
 
@@ -33,11 +35,13 @@ private const val BOARD_SIZE = BOARD_DIMENSION * SQUARE_SIZE // total board size
 private const val ANIMATION_DURATION = 500
 
 @Composable
-fun ChessBoardWithLabels(
+fun ChessBoard(
     pieces: List<AnimatedPiece>,
+    selected: Square?,
+    onSquareTap: (Square) -> Unit,
 ) {
-    Box(Modifier.size((BOARD_SIZE).dp)) {
-        BoardGrid()
+    Box(Modifier.size(BOARD_SIZE.dp)) {
+        BoardGrid(selected, onSquareTap)
         LabelsOverlay()
         AnimatedPiecesLayer(pieces)
     }
@@ -48,7 +52,6 @@ private fun LabelsOverlay() {
     Box(Modifier.size((BOARD_SIZE).dp)) {
         for (row in 0 until BOARD_DIMENSION) {
             for (col in 0 until BOARD_DIMENSION) {
-                // compute whether this square is light or dark
                 val isDark = (row + col) % 2 == 0
                 val textColor = if (isDark) {
                     Color.Gray
@@ -56,7 +59,6 @@ private fun LabelsOverlay() {
                     Color.White
                 }
 
-                // absolute position of this cell
                 val x = (col * SQUARE_SIZE).dp
                 val y = (row * SQUARE_SIZE).dp
 
@@ -96,29 +98,41 @@ private fun LabelsOverlay() {
 }
 
 @Composable
-private fun BoardGrid() {
+private fun BoardGrid(
+    selected: Square?,
+    onTap: (Square) -> Unit,
+) {
     val lightSq = Color.White
     val darkSq = Color.Gray
+    val selTint = Color.Yellow.copy(0.4f)
+
     Column {
         repeat(BOARD_DIMENSION) { row ->
             Row {
                 repeat(BOARD_DIMENSION) { col ->
-                    val light = (row + col) % 2 == 0
-                    val background = if (light) {
-                        lightSq
-                    } else {
-                        darkSq
-                    }
+                    val isLight = (row + col) % 2 == 0
+                    val bg = if (isLight) lightSq else darkSq
+                    val highlighted = selected?.row == row && selected.col == col
+
                     Box(
                         Modifier
                             .size(SQUARE_SIZE.dp)
-                            .background(background)
+                            .background(bg)
+                            .then(
+                                if (highlighted) {
+                                    Modifier.background(selTint)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { onTap(Square(row, col)) }
                     )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun AnimatedPiecesLayer(pieces: List<AnimatedPiece>) {

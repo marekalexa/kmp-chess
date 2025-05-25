@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.example.chess.domain.model.Piece
 import org.example.chess.domain.model.PieceColor
 import org.example.chess.domain.model.PieceType
+import kotlin.random.Random
 
 private const val CHESS_BOARD_SIZE = 8
 
@@ -29,27 +30,27 @@ class ChessBoardRepository {
         val board = Array(CHESS_BOARD_SIZE) { Array<Piece?>(CHESS_BOARD_SIZE) { null } }
 
         board[0] = arrayOf(
-            Piece(PieceType.ROOK, PieceColor.BLACK),
-            Piece(PieceType.KNIGHT, PieceColor.BLACK),
-            Piece(PieceType.BISHOP, PieceColor.BLACK),
-            Piece(PieceType.QUEEN, PieceColor.BLACK),
-            Piece(PieceType.KING, PieceColor.BLACK),
-            Piece(PieceType.BISHOP, PieceColor.BLACK),
-            Piece(PieceType.KNIGHT, PieceColor.BLACK),
-            Piece(PieceType.ROOK, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.ROOK, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.KNIGHT, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.BISHOP, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.QUEEN, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.KING, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.BISHOP, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.KNIGHT, PieceColor.BLACK),
+            Piece(Random.nextInt().toString(),PieceType.ROOK, PieceColor.BLACK),
         )
-        board[1] = Array(8) { Piece(PieceType.PAWN, PieceColor.BLACK) }
+        board[1] = Array(8) { Piece(Random.nextInt().toString(),PieceType.PAWN, PieceColor.BLACK) }
 
-        board[6] = Array(8) { Piece(PieceType.PAWN, PieceColor.WHITE) }
+        board[6] = Array(8) { Piece(Random.nextInt().toString(),PieceType.PAWN, PieceColor.WHITE) }
         board[7] = arrayOf(
-            Piece(PieceType.ROOK, PieceColor.WHITE),
-            Piece(PieceType.KNIGHT, PieceColor.WHITE),
-            Piece(PieceType.BISHOP, PieceColor.WHITE),
-            Piece(PieceType.QUEEN, PieceColor.WHITE),
-            Piece(PieceType.KING, PieceColor.WHITE),
-            Piece(PieceType.BISHOP, PieceColor.WHITE),
-            Piece(PieceType.KNIGHT, PieceColor.WHITE),
-            Piece(PieceType.ROOK, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.ROOK, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.KNIGHT, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.BISHOP, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.QUEEN, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.KING, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.BISHOP, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.KNIGHT, PieceColor.WHITE),
+            Piece(Random.nextInt().toString(),PieceType.ROOK, PieceColor.WHITE),
         )
         return board
     }

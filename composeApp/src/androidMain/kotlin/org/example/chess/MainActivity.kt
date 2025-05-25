@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.chess.data.repository.ChessBoardRepository
 import org.example.chess.di.initDI
+import org.example.chess.domain.usecase.MoveValidator
+import org.example.chess.domain.usecase.ValidateAndMakeMove
 import org.example.chess.ui.viewmodel.ChessViewModel
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.compose.withDI
@@ -18,7 +20,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             withDI(di) {
-                // Android helper automatically keeps VM in ViewModelStoreOwner
                 val viewModel by rememberInstance<ChessViewModel>()
                 App(viewModel)
             }
@@ -30,5 +31,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App(ChessViewModel(ChessBoardRepository()))
+    App(ChessViewModel(ChessBoardRepository(), ValidateAndMakeMove(ChessBoardRepository(), MoveValidator())))
 }

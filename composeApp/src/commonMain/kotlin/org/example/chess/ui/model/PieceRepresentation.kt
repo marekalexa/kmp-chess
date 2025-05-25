@@ -45,7 +45,7 @@ fun Piece.getDrawableRes(): DrawableResource {
 
 fun Piece.toRepresentation(): PieceRepresentation {
     val name = "${color.name.lowercase()} ${type.name.lowercase()}"
-    val drawable = getDrawableRes() // same as before
+    val drawable = getDrawableRes()
 
     return PieceRepresentation(name = name, drawable = drawable)
 }

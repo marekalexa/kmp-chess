@@ -15,12 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.example.chess.ui.composable.ChessBoardWithLabels
+import org.example.chess.ui.composable.ChessBoard
 import org.example.chess.ui.viewmodel.ChessViewModel
 
 @Composable
 fun App(viewModel: ChessViewModel) {
-    val boardState by viewModel.uiPieces.collectAsState(initial = emptyList())
+    val pieces by viewModel.uiPieces.collectAsState(initial = emptyList())
+    val selected by viewModel.selected.collectAsState()
 
     MaterialTheme {
         Column(
@@ -31,7 +32,11 @@ fun App(viewModel: ChessViewModel) {
             Button(onClick = viewModel::scramble) { Text("Scramble pieces") }
             Button(onClick = viewModel::reset) { Text("Reset game") }
             Spacer(Modifier.size(8.dp))
-            ChessBoardWithLabels(boardState)
+            ChessBoard(
+                pieces = pieces,
+                selected = selected,
+                onSquareTap = viewModel::onSquareClicked
+            )
         }
     }
 }
