@@ -25,14 +25,14 @@ import org.example.chess.domain.model.Square
 import org.example.chess.ui.model.AnimatedPiece
 import org.jetbrains.compose.resources.painterResource
 
-private val files = listOf('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
-private val ranks = (8 downTo 1).toList()
-
 private const val SQUARE_SIZE = 48  // size of one square
 private const val PIECE_SIZE = 42  // size of one piece
 private const val BOARD_DIMENSION = 8 // number of squares per row/column
 private const val BOARD_SIZE = BOARD_DIMENSION * SQUARE_SIZE // total board size
-private const val ANIMATION_DURATION = 500
+private const val ANIMATION_DURATION_MS = 200
+
+private val files = listOf('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
+private val ranks = (8 downTo 1).toList()
 
 @Composable
 fun ChessBoard(
@@ -143,12 +143,12 @@ fun AnimatedPiecesLayer(pieces: List<AnimatedPiece>) {
                 val xTargetValue = ((piece.col * SQUARE_SIZE) + pieceOffset).dp
                 val x by animateDpAsState(
                     targetValue = xTargetValue,
-                    animationSpec = TweenSpec(ANIMATION_DURATION)
+                    animationSpec = TweenSpec(ANIMATION_DURATION_MS)
                 )
                 val yTargetValue = ((piece.row * SQUARE_SIZE) + pieceOffset).dp
                 val y by animateDpAsState(
                     targetValue = yTargetValue,
-                    animationSpec = TweenSpec(ANIMATION_DURATION)
+                    animationSpec = TweenSpec(ANIMATION_DURATION_MS)
                 )
 
                 Image(

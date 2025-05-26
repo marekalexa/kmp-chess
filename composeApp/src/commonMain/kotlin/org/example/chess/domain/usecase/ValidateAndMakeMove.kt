@@ -14,7 +14,7 @@ class ValidateAndMakeMove(
     }
 
     operator fun invoke(selectedPiece: Piece, from: Square, to: Square): Result {
-        return if (validator.isLegal(selectedPiece, from, to)) {
+        return if (validator.isLegal(chessBoardRepository.board.value, selectedPiece, from, to)) {
             chessBoardRepository.movePiece(from.row, from.col, to.row, to.col)
             Result.Success
         } else {

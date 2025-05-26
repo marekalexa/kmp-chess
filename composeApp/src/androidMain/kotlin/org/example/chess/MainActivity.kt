@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.chess.data.repository.ChessBoardRepository
 import org.example.chess.di.initDI
+import org.example.chess.domain.usecase.MoveGenerator
 import org.example.chess.domain.usecase.MoveValidator
 import org.example.chess.domain.usecase.ValidateAndMakeMove
 import org.example.chess.ui.viewmodel.ChessViewModel
@@ -31,5 +32,13 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App(ChessViewModel(ChessBoardRepository(), ValidateAndMakeMove(ChessBoardRepository(), MoveValidator())))
+    App(
+        ChessViewModel(
+            ChessBoardRepository(),
+            ValidateAndMakeMove(
+                ChessBoardRepository(),
+                MoveValidator(MoveGenerator())
+            )
+        )
+    )
 }
