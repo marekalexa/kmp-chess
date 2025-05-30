@@ -13,9 +13,11 @@ class ValidateAndMakeMove(
         data object Illegal : Result()
     }
 
-    operator fun invoke(selectedPiece: Piece, from: Square, to: Square): Result {
-        return if (validator.isLegal(chessBoardRepository.board.value, selectedPiece, from, to)) {
-            chessBoardRepository.movePiece(from.row, from.col, to.row, to.col)
+    operator fun invoke(selectedPiece: Piece, from: Square, to: Square, promotion: org.example.chess.domain.model.PieceType? = null): Result {
+        val board = chessBoardRepository.board.value
+        val moveHistory = chessBoardRepository.moveHistory
+        return if (validator.isLegal(board, selectedPiece, from, to, moveHistory)) {
+            chessBoardRepository.movePiece(from.row, from.col, to.row, to.col, promotion)
             Result.Success
         } else {
             Result.Illegal

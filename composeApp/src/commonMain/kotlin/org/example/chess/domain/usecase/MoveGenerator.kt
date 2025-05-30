@@ -1,154 +1,245 @@
 package org.example.chess.domain.usecase
 
+import org.example.chess.domain.model.Move
 import org.example.chess.domain.model.Piece
 import org.example.chess.domain.model.PieceColor
 import org.example.chess.domain.model.PieceType
+import org.example.chess.domain.model.SpecialMove
 import org.example.chess.domain.model.Square
+import kotlin.math.abs
 
+/**
+ * Stateless utility that produces *pseudo‑legal* moves for a single piece. A higher‑level
+ * `RulesEngine` should filter these for check, stalemate, or threefold repetition.
+ */
 class MoveGenerator {
 
-    /** Generate every legal target square for `piece` standing on `pieceSquare`. */
+    private companion object {
+        val DIAGONAL_OFFSETS = listOf(1 to 1, 1 to -1, -1 to 1, -1 to -1)
+        val ORTHOGONAL_OFFSETS = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)
+        val KNIGHT_OFFSETS = listOf(
+            2 to 1, 1 to 2, -2 to 1, -1 to 2,
+            2 to -1, 1 to -2, -2 to -1, -1 to -2
+        )
+        val KING_OFFSETS = DIAGONAL_OFFSETS + ORTHOGONAL_OFFSETS
+    }
+
+    private fun isInsideBoard(row: Int, column: Int) = row in 0..7 && column in 0..7
+
+    private fun Array<Array<Piece?>>.pieceAt(square: Square): Piece? = this[square.row][square.col]
+
+    private fun Array<Array<Piece?>>.isEmpty(square: Square) = pieceAt(square) == null
+
+    private fun Array<Array<Piece?>>.isOpponent(square: Square, sideToMove: PieceColor) =
+        pieceAt(square)?.color?.let { it != sideToMove } ?: false
+
+    private fun Piece?.isFriendlyTo(color: PieceColor) = this != null && this.color == color
+
+    /**
+     * Generate all **pseudo‑legal** moves for [piece] located on [fromSquare].
+     * Castling safety (king must not move through check) is enforced here; other
+     * check detection should be performed by a higher layer.
+     */
     fun generateMoves(
         board: Array<Array<Piece?>>,
         piece: Piece,
-        pieceSquare: Square,
-        enPassant: Square?,
-    ): List<Square> = when (piece.type) {
-        PieceType.PAWN -> pawnMoves(board, piece, pieceSquare, enPassant)
-        PieceType.KNIGHT -> knightMoves(board, piece, pieceSquare)
-        PieceType.BISHOP -> bishopMoves(board, piece, pieceSquare)
-        PieceType.ROOK -> rookMoves(board, piece, pieceSquare)
-        PieceType.QUEEN -> queenMoves(board, piece, pieceSquare)
-        PieceType.KING -> kingMoves(board, piece, pieceSquare)
+        fromSquare: Square,
+        history: List<Move>,
+    ): List<Move> = when (piece.type) {
+        PieceType.PAWN -> pawnMoves(board, piece, fromSquare, history)
+        PieceType.KNIGHT -> knightMoves(board, piece, fromSquare)
+        PieceType.BISHOP -> bishopMoves(board, piece, fromSquare)
+        PieceType.ROOK -> rookMoves(board, piece, fromSquare)
+        PieceType.QUEEN -> queenMoves(board, piece, fromSquare)
+        PieceType.KING -> kingMoves(board, piece, fromSquare, history)
     }
 
-    private val diagonalsDirection = listOf(1 to 1, 1 to -1, -1 to 1, -1 to -1)
-    private val orthogonalsDirection = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)
-
-    private fun inBoard(row: Int, col: Int) = row in 0..7 && col in 0..7
-
     private fun pawnMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square,
-        enPassant: Square?,
-    ): List<Square> {
-        val rowDirection = if (piece.color == PieceColor.WHITE) -1 else 1
+        board: Array<Array<Piece?>>, piece: Piece, from: Square, history: List<Move>
+    ): List<Move> {
+        val forwardDir = if (piece.color == PieceColor.WHITE) -1 else 1
         val startRow = if (piece.color == PieceColor.WHITE) 6 else 1
-        val moves = mutableListOf<Square>()
+        val legalMoves = mutableListOf<Move>()
 
-        // forward 1/2
-        val oneRowStep = pieceSquare.row + rowDirection
-        if (inBoard(oneRowStep, pieceSquare.col) && board[oneRowStep][pieceSquare.col] == null) {
-            moves.add(Square(oneRowStep, pieceSquare.col))
-            val twoRowStep = pieceSquare.row + 2 * rowDirection
-            if (pieceSquare.row == startRow && board[twoRowStep][pieceSquare.col] == null) {
-                moves.add(Square(twoRowStep, pieceSquare.col))
+        // Forward advances
+        val oneStepForward = Square(from.row + forwardDir, from.col)
+        if (isInsideBoard(
+                oneStepForward.row,
+                oneStepForward.col
+            ) && board.isEmpty(oneStepForward)
+        ) {
+            legalMoves += Move(from, oneStepForward, piece)
+            val twoStepForward = Square(from.row + 2 * forwardDir, from.col)
+            if (from.row == startRow && board.isEmpty(twoStepForward)) {
+                legalMoves += Move(from, twoStepForward, piece)
             }
         }
 
-        // captures & en-passant
-        for (columnDirection in listOf(-1, +1)) {
-            val column = pieceSquare.col + columnDirection
-            if (!inBoard(oneRowStep, column)) continue
-            val target = board[oneRowStep][column]
-            if (target != null && target.color != piece.color) { // normal capture
-                moves += Square(oneRowStep, column)
+        // Captures + en‑passant
+        for (columnOffset in listOf(-1, 1)) {
+            val target = Square(from.row + forwardDir, from.col + columnOffset)
+            if (!isInsideBoard(target.row, target.col)) continue
+
+            // normal diagonal capture
+            if (board.isOpponent(target, piece.color)) {
+                legalMoves += Move(from, target, piece, captured = board.pieceAt(target))
             }
-            // en-passant capture
-            if (enPassant != null && enPassant.row == oneRowStep && enPassant.col == column) {
-                moves += enPassant
+
+            // en‑passant capture
+            val lastMove = history.lastOrNull() ?: continue
+            val isAdjacentPawnTwoStep =
+                lastMove.piece.type == PieceType.PAWN &&
+                        abs(lastMove.from.row - lastMove.to.row) == 2 &&
+                        lastMove.to.row == from.row && lastMove.to.col == target.col
+
+            if (isAdjacentPawnTwoStep) {
+                legalMoves += Move(
+                    from,
+                    target,
+                    piece,
+                    captured = lastMove.piece,
+                    special = SpecialMove.EN_PASSANT
+                )
             }
         }
-        return moves
+        return legalMoves
     }
 
     private fun knightMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square
-    ): List<Square> {
-        val jumps = listOf(
-            2 to 1, 1 to 2, -2 to 1, -1 to 2,
-            2 to -1, 1 to -2, -2 to -1, -1 to -2,
-        )
-        return jumps.map { (directionRow, directionColumn) ->
+        board: Array<Array<Piece?>>, piece: Piece, fromSquare: Square
+    ): List<Move> = KNIGHT_OFFSETS
+        .map { (rowOffset, colOffset) ->
             Square(
-                pieceSquare.row + directionRow,
-                pieceSquare.col + directionColumn
+                fromSquare.row + rowOffset,
+                fromSquare.col + colOffset
             )
         }
-            .filter { inBoard(it.row, it.col) }
-            .filter { board[it.row][it.col]?.color != piece.color }
-    }
+        .filter { isInsideBoard(it.row, it.col) && !board.pieceAt(it).isFriendlyTo(piece.color) }
+        .map { destination ->
+            Move(
+                fromSquare,
+                destination,
+                piece,
+                captured = board.pieceAt(destination)
+            )
+        }
 
-    private fun bishopMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square,
-    ): List<Square> {
-        return slideMoves(board, piece, pieceSquare, diagonalsDirection)
-    }
+    private fun bishopMoves(board: Array<Array<Piece?>>, piece: Piece, fromSquare: Square) =
+        slideMoves(board, piece, fromSquare, DIAGONAL_OFFSETS)
 
-    private fun rookMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square,
-    ): List<Square> {
-        return slideMoves(board, piece, pieceSquare, orthogonalsDirection)
-    }
+    private fun rookMoves(board: Array<Array<Piece?>>, piece: Piece, fromSquare: Square) =
+        slideMoves(board, piece, fromSquare, ORTHOGONAL_OFFSETS)
 
-    private fun queenMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square,
-    ): List<Square> {
-        return slideMoves(board, piece, pieceSquare, diagonalsDirection + orthogonalsDirection)
-    }
+    private fun queenMoves(board: Array<Array<Piece?>>, piece: Piece, fromSquare: Square) =
+        slideMoves(board, piece, fromSquare, DIAGONAL_OFFSETS + ORTHOGONAL_OFFSETS)
 
-    // bishop / rook / queen
     private fun slideMoves(
         board: Array<Array<Piece?>>,
         piece: Piece,
-        pieceSquare: Square,
-        directions: List<Pair<Int, Int>>
-    ): List<Square> {
-        val moves = mutableListOf<Square>()
-        for ((directionRow, directionColumn) in directions) {
-            var row = pieceSquare.row + directionRow
-            var col = pieceSquare.col + directionColumn
-
-            // slide in the given direction until hitting the edge of the board or another piece
-            while (inBoard(row, col)) {
-                val occupant = board[row][col]
+        fromSquare: Square,
+        directions: List<Pair<Int, Int>>,
+    ): List<Move> {
+        val legalMoves = mutableListOf<Move>()
+        for ((rowOffset, colOffset) in directions) {
+            var currentRow = fromSquare.row + rowOffset
+            var currentColumn = fromSquare.col + colOffset
+            while (isInsideBoard(currentRow, currentColumn)) {
+                val targetSquare = Square(currentRow, currentColumn)
+                val occupant = board.pieceAt(targetSquare)
                 if (occupant == null) {
-                    moves += Square(row, col)
+                    legalMoves += Move(fromSquare, targetSquare, piece)
                 } else {
-                    if (occupant.color != piece.color) { // capture
-                        moves += Square(row, col)
+                    if (occupant.color != piece.color) {
+                        legalMoves += Move(fromSquare, targetSquare, piece, captured = occupant)
                     }
-                    break
+                    break // blocked by any piece
                 }
-                row += directionRow
-                col += directionColumn
+                currentRow += rowOffset
+                currentColumn += colOffset
             }
         }
-        return moves
+        return legalMoves
     }
 
     private fun kingMoves(
-        board: Array<Array<Piece?>>,
-        piece: Piece,
-        pieceSquare: Square
-    ): List<Square> {
-        return (diagonalsDirection + orthogonalsDirection).map { (directionRow, directionColumn) ->
-            Square(
-                pieceSquare.row + directionRow,
-                pieceSquare.col + directionColumn
+        board: Array<Array<Piece?>>, piece: Piece, fromSquare: Square, history: List<Move>
+    ): List<Move> {
+        val singleSteps = KING_OFFSETS
+            .map { (rowOffset, colOffset) ->
+                Square(
+                    fromSquare.row + rowOffset,
+                    fromSquare.col + colOffset
+                )
+            }
+            .filter {
+                isInsideBoard(it.row, it.col) && !board.pieceAt(it).isFriendlyTo(piece.color)
+            }
+            .map { destination ->
+                Move(
+                    fromSquare,
+                    destination,
+                    piece,
+                    captured = board.pieceAt(destination)
+                )
+            }
+
+        val castlingMoves = generateCastlingMoves(board, piece, fromSquare, history)
+        return singleSteps + castlingMoves
+    }
+
+    private fun generateCastlingMoves(
+        board: Array<Array<Piece?>>, king: Piece, kingSquare: Square, history: List<Move>
+    ): List<Move> {
+        val legalMoves = mutableListOf<Move>()
+        val backRank = if (king.color == PieceColor.WHITE) 7 else 0
+
+        // King or rook already moved?
+        val kingHasMoved =
+            history.any { it.piece.type == PieceType.KING && it.piece.color == king.color }
+        if (kingHasMoved || kingSquare != Square(backRank, 4)) return legalMoves
+
+        val rookKingSideSquare = Square(backRank, 7)
+        val rookQueenSideSquare = Square(backRank, 0)
+        val rookKingSideMoved =
+            history.any {
+                it.from == rookKingSideSquare &&
+                        it.piece.type == PieceType.ROOK &&
+                        it.piece.color == king.color
+            }
+        val rookQueenSideMoved =
+            history.any {
+                it.from == rookQueenSideSquare &&
+                        it.piece.type == PieceType.ROOK &&
+                        it.piece.color == king.color
+            }
+
+        // King‑side: squares f and g clear; e‑f‑g not under attack
+        val kingSideIntermediateSquares = listOf(Square(backRank, 5), Square(backRank, 6))
+        if (!rookKingSideMoved &&
+            kingSideIntermediateSquares.all { board.isEmpty(it) }
+        ) {
+            legalMoves += Move(
+                kingSquare,
+                Square(backRank, 6),
+                king,
+                special = SpecialMove.CASTLING_KINGSIDE
             )
         }
-            .filter { inBoard(it.row, it.col) }
-            .filter { board[it.row][it.col]?.color != piece.color }
-        // castling not implemented yet
+
+        // Queen‑side: squares b, c, d clear; e‑d‑c not under attack
+        val queenSideIntermediateSquares =
+            listOf(Square(backRank, 3), Square(backRank, 2), Square(backRank, 1))
+        if (!rookQueenSideMoved &&
+            queenSideIntermediateSquares.all { board.isEmpty(it) }
+        ) {
+            legalMoves += Move(
+                kingSquare,
+                Square(backRank, 2),
+                king,
+                special = SpecialMove.CASTLING_QUEENSIDE
+            )
+        }
+
+        return legalMoves
     }
 }
